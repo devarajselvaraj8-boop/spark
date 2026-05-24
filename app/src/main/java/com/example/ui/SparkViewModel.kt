@@ -30,6 +30,15 @@ class SparkViewModel(application: Application) : AndroidViewModel(application) {
     private val _isUserLoggedIn = MutableStateFlow(sharedPrefs.getBoolean("logged_in", false))
     val isUserLoggedIn = _isUserLoggedIn.asStateFlow()
 
+    // --- Language Preference Flow ---
+    private val _appLanguage = MutableStateFlow(sharedPrefs.getString("app_language", "en") ?: "en")
+    val appLanguage = _appLanguage.asStateFlow()
+
+    fun setLanguage(lang: String) {
+        sharedPrefs.edit().putString("app_language", lang).apply()
+        _appLanguage.value = lang
+    }
+
     // --- Database Flows ---
     val allSongs: StateFlow<List<SongEntity>> = dao.getAllSongs()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -55,103 +64,369 @@ class SparkViewModel(application: Application) : AndroidViewModel(application) {
     val generatedLyrics = _generatedLyrics.asStateFlow()
 
     init {
-        // Prepopulate database with default songs if library is empty
+        // Prepopulate database with default songs if library is empty or incomplete
         viewModelScope.launch {
             allSongs.first { true } // Wait for flow initial load
             val currentList = dao.getAllSongs().first()
-            if (currentList.isEmpty()) {
-                Log.i(tag, "Library dry. Pre-populating Spark with standard tracks.")
+            if (currentList.size < 15) {
+                Log.i(tag, "Library dry or outdated. Pre-populating Spark with comprehensive tracks.")
                 populateInitialTracks()
             }
         }
     }
 
     private suspend fun populateInitialTracks() {
-        val defaultSongs = listOf(
+        val baseSongs = listOf(
             SongEntity(
                 id = "1",
                 title = "Neon Drive",
                 artist = "Sunset Retro",
                 album = "Vapor Outrun",
-                durationMs = 372000,
+                durationMs = 240000,
                 streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
                 imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&q=80",
                 genre = "Synthwave",
-                lyrics = "[00:00] (Neon instrumental intro)\n[00:10] Midnight highway is calling me\n[00:20] The neon streetlights is all I see\n[00:30] Revving the engine, feeling so free\n[00:40] Outrun the grid, come along with me!"
+                lyrics = "[00:00] (Neon instrumental intro)\n[00:10] Midnight highway is calling me\n[00:20] The neon streetlights is all I see\n[00:30] Revving the engine, feeling so free"
             ),
             SongEntity(
                 id = "2",
-                title = "Midnight Cruise",
-                artist = "Cosmic Dust",
-                album = "Star Trails",
-                durationMs = 423000,
-                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-                imageUrl = "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&q=80",
-                genre = "Vaporwave",
-                lyrics = "[00:00] (Cosmic ambiance introduction)\n[00:15] Lost in the static of a retro dream\n[00:30] Things are never quite what they seem\n[00:45] Drifting down lanes of digital light\n[01:00] We'll cruise through the midnight starry night"
+                title = "Arabic Kuthu (அரபிக் குத்து)",
+                artist = "Anirudh Ravichander (அனிருத் ரவிச்சந்தர்)",
+                album = "Beast (பீஸ்ட்)",
+                durationMs = 280000,
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                imageUrl = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80",
+                genre = "Kollywood Hits",
+                lyrics = "[00:00] (Instrumental hook / அரபிக் இசை முகப்பு)\n[00:05] ஹலாமிதி ஹபிபோ அலைகும் சலாம்\n[00:10] உன்னோட கண்ணுல வெட்டு கத்தி ஒன்னு\n[00:15] நெஞ்சுல ஏறுது கிச்சு கிச்சு பண்ணு"
             ),
             SongEntity(
                 id = "3",
-                title = "Deep Space",
-                artist = "Nebula Zone",
-                album = "Vacuum of Space",
-                durationMs = 302000,
-                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-                imageUrl = "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80",
-                genre = "Ambient",
-                lyrics = "[00:00] (Slow evolving synth pads)\n[00:30] No sound in the black void\n[01:00] Floating past an old asteroid\n[01:30] Cold lights twinkling far away\n[02:00] Lost in the beauty of endless delay"
+                title = "Kanmani Anbodu (கண்மணி அன்போடு)",
+                artist = "Kamal Haasan & S. Janaki (கமலாஹாசன் & எஸ் ஜானகி)",
+                album = "Gunaa (குணா)",
+                durationMs = 310000,
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+                imageUrl = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&q=80",
+                genre = "90s Tamil Classics",
+                lyrics = "[00:00] (Guitar intro / கிதார் முகப்பு)\n[00:05] கண்மணி அன்போடு காதலன் நான் எழுதும் கடிதமே\n[00:10] பொன்மணி உன் வீட்டில் சௌக்கியமா நான் இங்கு சௌக்கியமே"
             ),
             SongEntity(
                 id = "4",
-                title = "Cyber Club Pulse",
-                artist = "Techno Nova",
-                album = "Neon Grid 2099",
-                durationMs = 318000,
-                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
-                imageUrl = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80",
-                genre = "Cyberpunk",
-                lyrics = "[00:00] (Heavy synthesizer drums)\n[00:10] Plug in my cortex, feed me the sound\n[00:20] Grid-breaking rhythms shaking the ground\n[00:30] Augmented systems running in high\n[00:40] Under the mega-structure neon sky"
+                title = "Oru Manam (ஒரு மனம்)",
+                artist = "Karthik & Shashaa Tirupati (கார்த்திக் & ஷாஷா)",
+                album = "Dhruva Natchathiram (துருவ நட்சத்திரம்)",
+                durationMs = 350000,
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+                imageUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
+                genre = "Melody Songs",
+                lyrics = "[00:00] (Soft melody pads)\n[00:05] ஒரு மனம் கேட்குதே உன்னை மட்டும்\n[00:10] மறு மனம் கேட்குதே உன் வழியையே"
             ),
             SongEntity(
                 id = "5",
-                title = "Acoustic Whispers",
-                artist = "Luna Breeze",
-                album = "Summer Solitude",
-                durationMs = 405000,
-                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
-                imageUrl = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&q=80",
-                genre = "Acoustic",
-                lyrics = "[00:00] (Aesthetic acoustic fingerpicking)\n[00:12] Whispers under the cozy shade\n[00:24] Thinking 'bout all the plans we made\n[00:36] Fireflies dance in the summer air\n[00:48] Finding the joy without any care"
+                title = "Enjoy Enjaami (என்ஜாய் எஞ்சாமி)",
+                artist = "Dhee ft. Arivu (தீ & அறிவு)",
+                album = "Enjoy Enjaami Indie (என்ஜாய் எஞ்சாமி)",
+                durationMs = 290000,
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+                imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&q=80",
+                genre = "Tamil Rap & Indie",
+                lyrics = "[00:00] (Tribal beats)\n[00:04] கடலூர் காடெல்லாம் காத்து நின்னவளே\n[00:08] என்ஜாய் எஞ்சாமி வாங்கோ வாங்கோ குலக்காரி"
             ),
             SongEntity(
                 id = "6",
-                title = "Electric Sky",
-                artist = "Orbit Rays",
-                album = "Atmospheric Fluctuations",
-                durationMs = 345000,
-                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3",
+                title = "Bodhai Kaname (போதை கணமே)",
+                artist = "Anirudh Ravichander (அனிருத் ரவிச்சந்தர்)",
+                album = "Oh Manapenne (ஓ மணப்பெண்ணே)",
+                durationMs = 270000,
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
                 imageUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
-                genre = "Electronica",
-                lyrics = "[00:00] (Sparkling glitch introductions)\n[00:15] Electric currents charge up the air\n[00:30] Static and lightning starting to flare\n[00:45] Ride on the storm-cloud, touch the machine\n[01:00] Purest energy you've ever seen"
+                genre = "Tamil Love Songs",
+                lyrics = "[00:00] (Ambient love key)\n[00:05] போதை கணமே என்னை ஆளும் உறவே\n[00:10] நெஞ்சும் தனியே உன்னை தேடும் அழகே"
+            ),
+            SongEntity(
+                id = "7",
+                title = "Madurai Veeran (மதுரை வீரன்)",
+                artist = "Velmurugan (வேல்முருகன்)",
+                album = "Folk of Madurai (மதுரை வீரன்)",
+                durationMs = 300000,
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3",
+                imageUrl = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=800",
+                genre = "Devotional Songs",
+                lyrics = "[00:00] (Traditional Madurai folk beats)\n[00:05] மதுரை வீரா என் சாமி வாராரு பாரு"
             )
         )
-        dao.insertSongs(defaultSongs)
 
-        // Prepopulate a couple playlists
+        val finalSongsList = baseSongs.toMutableList()
+
+        // Programmatically generate 20+ unique high-fidelity songs per major Tamil playlist category
+        // --- Category: Kollywood Hits ---
+        val kollywoodExtras = listOf(
+            Pair("Hukum - Alappara", "Jailer"),
+            Pair("Kavaliya", "Jailer"),
+            Pair("Vaathi Coming", "Master"),
+            Pair("Ranjithame", "Varisu"),
+            Pair("Naa Ready", "Leo"),
+            Pair("Badass", "Leo"),
+            Pair("Verithanam", "Bigil"),
+            Pair("Aalaporaan Thamizhan", "Mersal"),
+            Pair("Sodakku", "Thaanaa Serndha Koottam"),
+            Pair("Rowdy Baby", "Maari 2"),
+            Pair("Marana Mass", "Petta"),
+            Pair("Tum Tum", "Enemy"),
+            Pair("Dippam Dappam", "Kaathuvaakula Rendu Kaadhal"),
+            Pair("Private Party", "Don"),
+            Pair("Chilla Chilla", "Thunivu"),
+            Pair("Theri Baby", "Theri"),
+            Pair("Don'u Don'u Don'u", "Maari"),
+            Pair("Megaman Thangame", "Thiruchitrambalam"),
+            Pair("Single Pasanga", "Natpe Thunai"),
+            Pair("Velaikkaran", "Karuthavanlaam Galeeijam")
+        )
+        kollywoodExtras.forEachIndexed { index, pair ->
+            finalSongsList.add(
+                SongEntity(
+                    id = "kol_${index + 1}",
+                    title = "${pair.first} (ஹிட்)",
+                    artist = "Anirudh Ravichander",
+                    album = pair.second,
+                    durationMs = 210000 + (index * 4500L),
+                    streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 12) + 1}.mp3",
+                    imageUrl = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80",
+                    genre = "Kollywood Hits",
+                    lyrics = "[00:00] (High energy beats)\n[00:15] Kollywood Super Hit Track ${pair.first} is playing!\n[00:30] Feel the intense neon bass shake the floor."
+                )
+            )
+        }
+
+        // --- Category: Tamil Love Songs ---
+        val loveExtras = listOf(
+            Pair("Adiye", "Bachelor"),
+            Pair("Marakkuma Nenjam", "Vendhu Thanindhathu Kaadu"),
+            Pair("Kaadhal En Kaviye", "Salmon 3D"),
+            Pair("Vaseegara", "Minnale"),
+            Pair("Munbe Vaa", "Sillunu Oru Kaadhal"),
+            Pair("Kadhale Kadhale", "96"),
+            Pair("Neethane", "Mersal"),
+            Pair("Anbe Anbe", "Darling"),
+            Pair("Kannazhaga", "3"),
+            Pair("Ennamo Yedho", "Ko"),
+            Pair("Vizhi Moodi", "Ayan"),
+            Pair("New York Nagaram", "Sillunu Oru Kaadhal"),
+            Pair("Un Vizhigalil", "Maan Karate"),
+            Pair("Karka Karka", "Vettaiyaadu Vilaiyaadu"),
+            Pair("Mona Gasolina", "Lingaa"),
+            Pair("Po Nee Po", "3"),
+            Pair("Unakku Thaan", "Chithha"),
+            Pair("Thuli Thuli", "Paiyaa"),
+            Pair("Nira", "Takkar"),
+            Pair("Ayyayo", "Aadukalam")
+        )
+        loveExtras.forEachIndexed { index, pair ->
+            finalSongsList.add(
+                SongEntity(
+                    id = "love_${index + 1}",
+                    title = "${pair.first} (காதல்)",
+                    artist = "Sid Sriram & Friends",
+                    album = pair.second,
+                    durationMs = 230000 + (index * 3800L),
+                    streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 11) + 2}.mp3",
+                    imageUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
+                    genre = "Tamil Love Songs",
+                    lyrics = "[00:00] (Lovely soft piano intro)\n[00:12] Whispering sweet words of absolute love\n[00:25] Together under the brilliant twilight stars above"
+                )
+            )
+        }
+
+        // --- Category: Melody Songs ---
+        val melodyExtras = listOf(
+            Pair("Thangame", "Naanum Rowdy Dhaan"),
+            Pair("Kanja Poovu Kannala", "Viruman"),
+            Pair("Poongaatrile", "Dil Se"),
+            Pair("Vizhiyil", "Deiva Thirumagal"),
+            Pair("Ennodu Nee Irundhal", "I"),
+            Pair("Meghamaam", "Thiruchitrambalam"),
+            Pair("Kadhalaada", "Vivegam"),
+            Pair("Piraiyinile", "Classic"),
+            Pair("Netru Aval", "Maryan"),
+            Pair("Kaatru Veliyidai", "A.R. Rahman"),
+            Pair("Malare", "Premam"),
+            Pair("Yaayum", "Sagaa"),
+            Pair("Kurumba", "Tik Tik Tik"),
+            Pair("Kanave Kanave", "David"),
+            Pair("Mazhai Kuruvi", "Chekka Chivantha Vaanam"),
+            Pair("Kadhaippoma", "Oh My Kadavulae"),
+            Pair("Aagasa Veedhilo", "Solo"),
+            Pair("Neeyum Naanum", "Naanum Rowdy Dhaan"),
+            Pair("Unna Nenachadhu", "Psycho"),
+            Pair("Vinnathaandi", "VTV")
+        )
+        melodyExtras.forEachIndexed { index, pair ->
+            finalSongsList.add(
+                SongEntity(
+                    id = "mel_${index + 1}",
+                    title = "${pair.first} (மெலடி)",
+                    artist = "Sid Sriram / Vijay Yesudas",
+                    album = pair.second,
+                    durationMs = 250000 + (index * 5200L),
+                    streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 10) + 3}.mp3",
+                    imageUrl = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&q=80",
+                    genre = "Melody Songs",
+                    lyrics = "[00:00] (Acoustic strings & flute details)\n[00:15] Soothing soulful Tamil Melody: ${pair.first}\n[00:30] Peace and harmony filled ambient frequencies."
+                )
+            )
+        }
+
+        // --- Category: Mass Songs ---
+        val massExtras = listOf(
+            Pair("Thee Thalapathy", "Varisu"),
+            Pair("Udhungada Sangu", "Velaiyilla Pattathari"),
+            Pair("Local Boys", "Ethir Neechal"),
+            Pair("Semma Weightu", "Kaala")
+        )
+        massExtras.forEachIndexed { index, pair ->
+            finalSongsList.add(
+                SongEntity(
+                    id = "mass_${index + 1}",
+                    title = "${pair.first} (மாஸ்)",
+                    artist = "Dhanush / Simbu",
+                    album = pair.second,
+                    durationMs = 220000 + (index * 2900L),
+                    streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 6) + 1}.mp3",
+                    imageUrl = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80",
+                    genre = "Mass Songs",
+                    lyrics = "[00:00] (Heavy folk nadaswaram drums intro)\n[00:10] Dancestep! Mass song with pure Chennai energy."
+                )
+            )
+        }
+
+        // --- Category: Devotional Songs ---
+        val devExtras = listOf(
+            Pair("Kanda Sashti Kavasam", "Murugan Chants"),
+            Pair("Aigiri Nandini", "Devi Stotram"),
+            Pair("Karpanai Endralum", "Lord Murugan Devotional")
+        )
+        devExtras.forEachIndexed { index, pair ->
+            finalSongsList.add(
+                SongEntity(
+                    id = "dev_${index + 1}",
+                    title = "${pair.first} (பக்தி)",
+                    artist = "Sulamangalam Sisters / TM Soundararajan",
+                    album = pair.second,
+                    durationMs = 320000 + (index * 6100L),
+                    streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 12) + 1}.mp3",
+                    imageUrl = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=800",
+                    genre = "Devotional Songs",
+                    lyrics = "[00:00] (Bells ringing and traditional nadaswaram sound)\n[00:12] Devotional resonance and spiritual atmosphere."
+                )
+            )
+        }
+
+         // --- Category: 90s Tamil Classics ---
+        val classic90sExtras = listOf(
+            Pair("Pudhu Vellai Mazhai", "Roja"),
+            Pair("Anjali Anjali", "Anjali"),
+            Pair("Musthafa Musthafa", "Kadhalar Dhinam"),
+            Pair("Ilamai Idho Idho", "Sakalakala Vallavan")
+        )
+        classic90sExtras.forEachIndexed { index, pair ->
+            finalSongsList.add(
+                SongEntity(
+                    id = "classic_${index + 1}",
+                    title = "${pair.first} (கிளாசிக்)",
+                    artist = "S.P. Balasubrahmanyam & K.S. Chithra",
+                    album = pair.second,
+                    durationMs = 290000 + (index * 4200L),
+                    streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 8) + 4}.mp3",
+                    imageUrl = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&q=80",
+                    genre = "90s Tamil Classics",
+                    lyrics = "[00:00] (Nostalgic 90s synthesizers)\n[00:15] Timeless masterpiece from the evergreen decade of Kollywood."
+                )
+            )
+        }
+
+        // --- Category: Tamil Rap & Indie ---
+        val rapExtras = listOf(
+            Pair("Neeye Oli", "Sarpatta Parambarai"),
+            Pair("Kaalam Indie", "Arivu Special"),
+            Pair("Anti-Indian", "Arivu Rap"),
+            Pair("Asuran Rap", "Asuran Movie")
+        )
+        rapExtras.forEachIndexed { index, pair ->
+            finalSongsList.add(
+                SongEntity(
+                    id = "rap_${index + 1}",
+                    title = "${pair.first} (ராப்/இண்டி)",
+                    artist = "Arivu / Dhee / Santhosh Narayanan",
+                    album = pair.second,
+                    durationMs = 215000 + (index * 3200L),
+                    streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 8) + 6}.mp3",
+                    imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&q=80",
+                    genre = "Tamil Rap & Indie",
+                    lyrics = "[00:00] (Fast tempo electronic snare loop)\n[00:08] Tamil rap verses raising deep local cultural voices."
+                )
+            )
+        }
+
+        // --- Category: Trending Tamil Songs ---
+        val trendExtras = listOf(
+            Pair("Mangalyam", "Eeswaran"),
+            Pair("Gulu Gulu", "Naane Varuvean"),
+            Pair("Kaattu Payale", "Soorarai Pottru")
+        )
+        trendExtras.forEachIndexed { index, pair ->
+            finalSongsList.add(
+                SongEntity(
+                    id = "trend_${index + 1}",
+                    title = "${pair.first} (டிரெண்டிங்)",
+                    artist = "Silambarasan / Dhanush",
+                    album = pair.second,
+                    durationMs = 270000 + (index * 1500L),
+                    streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 12) + 1}.mp3",
+                    imageUrl = "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80",
+                    genre = "Trending Tamil Songs",
+                    lyrics = "[00:00] (Trending upbeat guitar opening)\n[00:15] Catchy trendy vibes echoing across Chennai city radio."
+                )
+            )
+        }
+
+        dao.insertSongs(finalSongsList)
+
+        // Prepopulate standard lists with comprehensive selections
         val defaultPlaylists = listOf(
             PlaylistEntity(
                 id = "p1",
                 name = "Outrun Sunset",
                 description = "Premium synth beats for midnight drives.",
                 imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&q=80",
-                songIdsJson = PlaylistEntity.createSongIdsJson(listOf("1", "2", "4"))
+                songIdsJson = PlaylistEntity.createSongIdsJson(listOf("1", "kol_1", "kol_2"))
             ),
             PlaylistEntity(
                 id = "p2",
                 name = "Deep Relaxation",
                 description = "Ambient and soft acoustic flows to calm your state.",
                 imageUrl = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&q=80",
-                songIdsJson = PlaylistEntity.createSongIdsJson(listOf("3", "5"))
+                songIdsJson = PlaylistEntity.createSongIdsJson(listOf("mel_1", "mel_2"))
+            ),
+            PlaylistEntity(
+                id = "t1",
+                name = "Top 50 - Chennai (சென்னை டாப் 50)",
+                description = "Trending and most streamed Kollywood hits in Chennai Metro.",
+                imageUrl = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80",
+                songIdsJson = PlaylistEntity.createSongIdsJson(listOf("kol_1", "kol_2", "kol_3", "trend_1"))
+            ),
+            PlaylistEntity(
+                id = "t2",
+                name = "Tamil Melody Oasis (தமிழ் மெலடி சோலை)",
+                description = "Soothing, beautiful melodies for late nights.",
+                imageUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
+                songIdsJson = PlaylistEntity.createSongIdsJson(listOf("love_1", "love_2", "mel_2", "mel_3"))
+            ),
+            PlaylistEntity(
+                id = "t3",
+                name = "Tamil Folk & Devotional (மதுரை கிராமியம்)",
+                description = "Soulful traditional devotional and village folk tracks.",
+                imageUrl = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=800",
+                songIdsJson = PlaylistEntity.createSongIdsJson(listOf("dev_1", "dev_2", "7"))
             )
         )
         defaultPlaylists.forEach { dao.insertPlaylist(it) }

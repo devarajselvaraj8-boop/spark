@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Spark</string>
+    <string name="attribution_label">Spark Core Attribution</string>
 </resources>

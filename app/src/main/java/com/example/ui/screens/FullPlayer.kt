@@ -62,6 +62,8 @@ fun FullMusicPlayerScreen(
     val sleepTimer by pm.sleepTimerRemainingSeconds.collectAsState()
 
     val lyricsGenerating by viewModel.aiLyricsGenerating.collectAsState()
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isTamil = currentLang == "ta"
 
     var showEqSheet by remember { mutableStateOf(false) }
     var showSleepTimerSheet by remember { mutableStateOf(false) }
@@ -419,7 +421,7 @@ fun FullMusicPlayerScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null, tint = CyberCyan, modifier = Modifier.size(16.dp))
-                                Text(" Synced Live Lyrics", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(if (isTamil) " ஓடிக்கொண்டிருக்கும் வரிகள்" else " Synced Live Lyrics", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                             
                             IconButton(
@@ -429,9 +431,9 @@ fun FullMusicPlayerScreen(
                             ) {
                                 if (lyricsGenerating) {
                                     CircularProgressIndicator(modifier = Modifier.size(16.dp), color = CyberCyan, strokeWidth = 2.dp)
-                                } else {
+                                  } else {
                                     Icon(imageVector = Icons.Default.Refresh, contentDescription = "Regenerate AI", tint = CyberCyan, modifier = Modifier.size(20.dp))
-                                }
+                                  }
                             }
                         }
 
@@ -443,7 +445,7 @@ fun FullMusicPlayerScreen(
                             modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp)
                         ) {
                             if (parsedLyrics.isEmpty()) {
-                                Text("No lyrics available. Generate lyrics with Spark AI model.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary, modifier = Modifier.padding(vertical = 12.dp))
+                                Text(if (isTamil) "விவரங்கள் எதுவும் இல்லை. வரிகளை உருவாக்க AI பொத்தானை அழுத்தவும்." else "No lyrics available. Generate lyrics with Spark AI model.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary, modifier = Modifier.padding(vertical = 12.dp))
                             } else {
                                 parsedLyrics.forEachIndexed { idx, line ->
                                     val isActive = idx == activeIndex
